@@ -1,0 +1,7 @@
+{
+  "name": "ReactiveLogApp",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
