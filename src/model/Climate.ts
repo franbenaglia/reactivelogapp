@@ -3,4 +3,5 @@ export class Climate {
     public humidity: number;
     public channel: number;
     public color: string;
+    public idx: number;
 }

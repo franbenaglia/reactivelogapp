@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { evtSource } from '../eventsource/Configuration';
 import './List.css';
-import { IonButton, IonCol, IonGrid, IonInput, IonRow } from '@ionic/react';
+import { IonButton, IonCol, IonFab, IonFabButton, IonGrid, IonIcon, IonInput, IonRow, IonToggle } from '@ionic/react';
 import { Climate } from '../model/Climate';
 import { CategoryScale } from "chart.js";
 import Chart from "chart.js/auto";
 import { Line } from "react-chartjs-2";
+import { trashOutline } from 'ionicons/icons';
 
 Chart.register(CategoryScale);
 
@@ -14,9 +15,10 @@ const Graph: React.FC = () => {
   const [climate, setClimate] = useState<Climate[]>([]);
   const [channelColor, setChannelColor] = useState<Map<number, string>>(new Map<number, string>());
   const [colorCount, setColorCount] = useState<Map<string, number>>(new Map<string, number>());
-  const [chartData, setChartData] = useState({ datasets: [] });
+  const [chartData, setChartData] = useState({ labels: null, datasets: [] });
+  const [stop, setStop] = useState(false);
 
-  const [index, setIndex] = useState<number>(0);
+  //const [index, setIndex] = useState<number>(0);
 
   const availableColors: string[] = ['red', 'white', 'blue', 'green', 'yellow', 'purple', 'cyan', 'magenta', 'pink'];
 
@@ -41,7 +43,9 @@ const Graph: React.FC = () => {
       //  }
       //  return index < availableColors.length ? index + 1 : 0;
       //});
-      setClimate([...climate, data]);
+      if (!stop) {
+        setClimate([...climate, data]);
+      }
       console.log(data);
     }
 
@@ -52,20 +56,14 @@ const Graph: React.FC = () => {
   }, [climate]);
 
   const initializeData = () => {
-  //https://blog.logrocket.com/using-chart-js-react/
+    //https://blog.logrocket.com/using-chart-js-react/
     setChartData({
-      //labels: Data.map((data) => data.year),
+      labels: climate && climate.length > 0 ? climate.map((data) => data.idx) : [],
       datasets: [
         {
-          label: "Users Gained ",
+          label: "Temperature", 
           data: climate && climate.length > 0 ? climate.map((data) => data.temperature) : [],
-          backgroundColor: [
-            "rgba(75,192,192,1)",
-            "ecf0f1",
-            "#50AF95",
-            "#f3ba2f",
-            "#2a71d0"
-          ],
+          backgroundColor: availableColors,
           borderColor: "black",
           borderWidth: 2
         }
@@ -122,8 +120,13 @@ const Graph: React.FC = () => {
 
   }
 
+  const toggleStop = () => {
+    const stopped = !stop;
+    setStop(stopped);
+  }
+
   return (
-    <div>
+    <>
 
       <Line
         data={chartData}
@@ -131,7 +134,7 @@ const Graph: React.FC = () => {
           plugins: {
             title: {
               display: true,
-              text: "Users Gained between 2016-2020"
+              text: "Temperature"
             },
             legend: {
               display: false
@@ -140,7 +143,11 @@ const Graph: React.FC = () => {
         }}
       />
 
-    </div>
+      <IonFab slot="fixed" vertical="top" horizontal="start">
+        <IonToggle checked={stop} onClick={() => toggleStop()}>Stop data logger</IonToggle>
+      </IonFab >
+
+    </>
   );
 };
 

@@ -22,12 +22,14 @@ interface AppPage {
 }
 
 const appPages: AppPage[] = [
+  /*
   {
     title: 'Inbox',
     url: '/folder/Inbox',
     iosIcon: mailOutline,
     mdIcon: mailSharp
   },
+  */
   {
     title: 'Graph',
     url: '/graph',
@@ -49,8 +51,8 @@ const Menu: React.FC = () => {
     <IonMenu contentId="main" type="overlay">
       <IonContent>
         <IonList id="inbox-list">
-          <IonListHeader>Inbox</IonListHeader>
-          <IonNote>hi@ionicframework.com</IonNote>
+          <IonListHeader>Real Time</IonListHeader>
+          <IonNote>Data Logger</IonNote>
           {appPages.map((appPage, index) => {
             return (
               <IonMenuToggle key={index} autoHide={false}>
