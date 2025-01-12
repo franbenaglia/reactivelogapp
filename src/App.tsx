@@ -33,6 +33,8 @@ import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import GraphPage from './pages/GraphPages';
+import ListPage from './pages/ListPage';
 
 setupIonicReact();
 
@@ -46,6 +48,15 @@ const App: React.FC = () => {
             <Route path="/" exact={true}>
               <Redirect to="/folder/Inbox" />
             </Route>
+
+            <Route path="/graph" exact={true}>
+              <GraphPage/>
+            </Route>
+
+            <Route path="/list" exact={true}>
+              <ListPage/>
+            </Route>
+
             <Route path="/folder/:name" exact={true}>
               <Page />
             </Route>
