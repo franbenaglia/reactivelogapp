@@ -1,52 +1,54 @@
-import { useEffect, useState } from 'react';
-import { evtSource } from '../eventsource/Configuration';
-import './List.css';
-import { IonButton, IonCol, IonFab, IonFabButton, IonGrid, IonIcon, IonInput, IonRow, IonToggle } from '@ionic/react';
-import { Climate } from '../model/Climate';
+import { IonFab, IonToggle } from '@ionic/react';
 import { CategoryScale } from "chart.js";
 import Chart from "chart.js/auto";
+import { useEffect, useState } from 'react';
 import { Line } from "react-chartjs-2";
-import { trashOutline } from 'ionicons/icons';
+import { evtSource } from '../eventsource/Configuration';
+import { Climate } from '../model/Climate';
+import './List.css';
+
+interface Data {
+  labels: number[];
+  datasets: any[];
+}
 
 Chart.register(CategoryScale);
 
 const Graph: React.FC = () => {
 
   const [climate, setClimate] = useState<Climate[]>([]);
-  const [channelColor, setChannelColor] = useState<Map<number, string>>(new Map<number, string>());
-  const [colorCount, setColorCount] = useState<Map<string, number>>(new Map<string, number>());
-  const [chartData, setChartData] = useState({ labels: null, datasets: [] });
+  const [orderedClimate, setOrderedClimate] = useState<Climate[]>([]);
+  const [chartData, setChartData] = useState<Data>({ labels: [], datasets: [] });
+  const [chartDataMulti, setChartDataMulti] = useState<Map<number, Climate[]>>(new Map<number, Climate[]>());
   const [stop, setStop] = useState(false);
-
-  //const [index, setIndex] = useState<number>(0);
+  const [multi, setMulti] = useState(true);
 
   const availableColors: string[] = ['red', 'white', 'blue', 'green', 'yellow', 'purple', 'cyan', 'magenta', 'pink'];
 
   useEffect(() => {
 
-    initializeColor();
+    configData();
 
-    initializeData();
+    configOrderedClimate();
 
-    //evtSource;
     evtSource.onopen = () => {
       console.log("Connection to server opened.");
     }
 
     evtSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      cssForChannel(data.channel);
-      //data.color = availableColors[index];
-      //setIndex(index => {
-      //  if (!channelColor.has(data.channel)) {
-      //    setChannelColor(previous => previous.set(data.channel, data.color));
-      //  }
-      //  return index < availableColors.length ? index + 1 : 0;
-      //});
+
       if (!stop) {
         setClimate([...climate, data]);
+        /*
+        if (climate.length === 100) {
+          const c = climate;
+          c.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          setOrderedClimate(c);
+        }
+          */
       }
-      console.log(data);
+      //console.log(data);
     }
 
     evtSource.onerror = (event) => {
@@ -55,80 +57,73 @@ const Graph: React.FC = () => {
 
   }, [climate]);
 
-  const initializeData = () => {
-    //https://blog.logrocket.com/using-chart-js-react/
-    setChartData({
-      labels: climate && climate.length > 0 ? climate.map((data) => data.idx) : [],
-      datasets: [
+  const configOrderedClimate = () => {
+
+    //console.log(orderedClimate);
+
+  }
+
+  const configData = () => {
+
+    const map = new Map<number, Climate[]>();
+    const dss: any[] = [];
+    const labels: any[] = [];
+
+    for (let i = 0; i < 48; i++) {
+      labels.push(i);
+    }
+
+    climate.map((data, idx) => {
+
+      //labels.push(data.idx);
+
+      if (data.idx == 0) {
+        //map.clear();
+      }
+
+      if (map.has(data.channel)) {
+        map.set(data.channel, [...map.get(data.channel), data]);
+      } else {
+        map.set(data.channel, [data]);
+      }
+
+    });
+
+    setChartDataMulti(map);
+
+    for (const c of map.values()) {
+
+      dss.push(
         {
-          label: "Temperature", 
-          data: climate && climate.length > 0 ? climate.map((data) => data.temperature) : [],
+          label: "Temperature",
+          data: c && c.length > 0 ? c.map((data) => data.temperature) : [],
           backgroundColor: availableColors,
           borderColor: "black",
           borderWidth: 2
         }
-      ]
-    });
+      );
 
-  }
-
-
-  const cssForChannel = (c: number): void => {
-    assignColorToChannel(c);
-  }
-
-  const initializeColor = () => {
-    for (let c of availableColors) {
-      colorCount.set(c, 0)
     }
-    setColorCount(colorCount);
+    const cd: Data = { labels: labels, datasets: dss };
+    setChartData(cd);
   }
 
-  const assignColorToChannel = (channel: number): void => {
-
-    if (!channelColor.has(channel)) {
-      let luc = lessUsedColor();
-      channelColor.set(channel, luc);
-      setChannelColor(channelColor);
-      colorCount.set(luc, colorCount.get(luc) + 1);
-      setColorCount(colorCount)
-    }
-
-  }
-
-  const lessUsedColor = (): string => {
-
-    let color: string;
-    let arrayVal: number[] = Array.from(colorCount.values());
-    let minor: number = Math.min(...arrayVal);
-
-    colorCount.forEach((value, key, map) => {
-      if (value === minor) {
-        color = key;
-      }
-    })
-    return color;
-  }
-
-
-  const getCssChannel = (channel: number): string => {
-    let color = 'red';
-    if (channelColor.has(channel)) {
-      color = channelColor.get(channel);
-    }
-    return color;
-
-  }
 
   const toggleStop = () => {
     const stopped = !stop;
     setStop(stopped);
   }
 
+  const toggleView = () => {
+    setMulti(!multi);
+  }
+
+
+
   return (
     <>
 
-      <Line
+      {!multi ? (<Line
         data={chartData}
         options={{
           plugins: {
@@ -141,14 +136,51 @@ const Graph: React.FC = () => {
             }
           }
         }}
-      />
+      />)
+        :
+        (
+
+          Array.from(chartDataMulti.entries()).map((key, value) =>
+            <Line
+              data={
+                {
+                  labels: key[1] && key[1].length > 0 ? key[1].map((data, idx) => new Date(data.date).getTime()) : [],
+                  datasets: [{
+                    label: "Temperature channel: " + key[0],
+                    data: key[1] && key[1].length > 0 ? key[1].map((data, idx) => data.temperature) : [],
+                    backgroundColor: availableColors,
+                    borderColor: "black",
+                    borderWidth: 2
+                  }]
+                }
+              }
+              options={{
+                plugins: {
+                  title: {
+                    display: true,
+                    text: "Temperature channel: " + key[0],
+                  },
+                  legend: {
+                    display: false
+                  }
+                }
+              }}
+            />
+          )
+
+        )
+      }
 
       <IonFab slot="fixed" vertical="top" horizontal="start">
         <IonToggle checked={stop} onClick={() => toggleStop()}>Stop data logger</IonToggle>
       </IonFab >
+      <IonFab slot="fixed" vertical="top" horizontal="end">
+        <IonToggle checked={multi} onClick={() => toggleView()}>Switch view</IonToggle>
+      </IonFab >
 
     </>
   );
+
 };
 
 export default Graph;

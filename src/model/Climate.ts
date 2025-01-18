@@ -4,4 +4,5 @@ export class Climate {
     public channel: number;
     public color: string;
     public idx: number;
+    public date: Date;
 }
